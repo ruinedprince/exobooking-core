@@ -1,0 +1,38 @@
+# WordPress / PHP
+*.log
+wp-config.php
+.htaccess
+.DS_Store
+Thumbs.db
+
+# IDE e editores
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Dependências
+/vendor/
+composer.lock
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Build / artefatos
+*.zip
+!docker-compose*.yml
+
+# Ambiente e secrets (NUNCA commitar)
+.env
+.env.local
+.env.*.local
+*.pem
+
+# Sistema
+.DS_Store
+desktop.ini
