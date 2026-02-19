@@ -30,7 +30,7 @@ services:
     container_name: exobooking-db
     restart: unless-stopped
     ports:
-      - "3307:3307"
+      - "3307:3306"
     environment:
       MYSQL_DATABASE: wordpress
       MYSQL_USER: wordpress
