@@ -69,6 +69,10 @@ class ExoBooking_Core_Activator {
 		require_once plugin_dir_path( __FILE__ ) . 'class-estoque-vagas-schema.php';
 		ExoBooking_Core_Estoque_Vagas_Schema::create_table();
 
+		// Criar tabela de reservas (EBC-5)
+		require_once plugin_dir_path( __FILE__ ) . 'class-reservas-schema.php';
+		ExoBooking_Core_Reservas_Schema::create_table();
+
 		// Registrar opção de versão do plugin
 		update_option( 'exobooking_core_version', EXOBOOKING_CORE_VERSION );
 	}

@@ -4,6 +4,72 @@ Alterações notáveis do projeto ExoBooking Core. O formato é baseado em [Keep
 
 ---
 
+## [0.5.0] - 2025-02-19
+
+### Adicionado
+
+- **Interfaces de admin para uso por usuário real**
+  - **Estoque de vagas na tela "Editar passeio":** metabox "Estoque de vagas" com formulário para informar data e vagas totais (Adicionar/Atualizar) e tabela com estoque por data (vagas totais, reservadas, disponíveis). Formulário enviado via `admin-post.php` para evitar form aninhado.
+  - **Página "Reservas" no menu Passeios:** listagem de reservas com colunas ID, Cliente, E-mail, Passeio (link para editar), Data, Criado em; paginação quando houver mais de 20 itens.
+- **Estoque:** método `get_estoque_por_passeio( $passeio_id )` em `ExoBooking_Core_Estoque_Vagas` para listar todas as datas com estoque de um passeio.
+- **Reservas:** métodos `get_todas( $args )` e `get_total()` em `ExoBooking_Core_Reservas` para listagem e paginação no admin.
+
+### Alterado
+
+- **Core:** carregamento condicional das classes admin (`class-admin-estoque-metabox.php`, `class-admin-reservas.php`) quando `is_admin()`; hooks de metabox e submenu em `define_admin_hooks()`.
+- **Versão do plugin:** 0.4.0 → 0.5.0.
+
+### Arquivos criados/alterados (interfaces admin)
+
+| Ação    | Arquivo |
+|---------|---------|
+| Criado  | `exobooking-core/includes/class-admin-estoque-metabox.php` |
+| Criado  | `exobooking-core/includes/class-admin-reservas.php` |
+| Alterado| `exobooking-core/includes/class-estoque-vagas.php` (`get_estoque_por_passeio`) |
+| Alterado| `exobooking-core/includes/class-reservas.php` (`get_todas`, `get_total`) |
+| Alterado| `exobooking-core/includes/class-exobooking-core.php` |
+| Alterado| `exobooking-core/exobooking-core.php` (versão 0.5.0) |
+| Alterado| `VERSION` |
+| Alterado| `CHANGELOG.md` |
+
+---
+
+## [0.4.0] - 2025-02-19
+
+### Adicionado
+
+- **Endpoint REST para reservas com proteção anti-overbooking** (tarefa EBC-5)
+  - POST `/wp-json/exobooking/v1/reservas`: cria reserva recebendo `passeio_id`, `data`, `nome`, `email`
+  - Lógica anti-overbooking via UPDATE condicional atômico em `ExoBooking_Core_Estoque_Vagas::reservar_vaga()` (evita race conditions)
+  - Tabela `{prefixo}_exobooking_reservas` (id, passeio_id, data, nome_cliente, email_cliente, criado_em) criada na ativação
+  - Classe `ExoBooking_Core_Reservas_Schema` em `exobooking-core/includes/class-reservas-schema.php`
+  - Classe `ExoBooking_Core_Reservas` em `exobooking-core/includes/class-reservas.php` (método `criar()`)
+  - Controller REST `ExoBooking_Core_REST_Reservas_Controller` em `exobooking-core/includes/class-rest-reservas-controller.php`
+  - Respostas: 200 (reserva criada), 400 (dados inválidos), 409 (sem vagas), 500 (erro ao registrar)
+
+### Alterado
+
+- **Estoque de vagas:** novo método `reservar_vaga( $passeio_id, $data )` com UPDATE condicional atômico
+- **Activator:** criação da tabela de reservas na ativação
+- **Core:** carregamento das classes de reservas e controller REST; hook `rest_api_init` para registrar rotas
+- **Versão do plugin:** 0.3.0 → 0.4.0
+
+### Arquivos criados/alterados (EBC-5)
+
+| Ação    | Arquivo |
+|---------|---------|
+| Criado  | `exobooking-core/includes/class-reservas-schema.php` |
+| Criado  | `exobooking-core/includes/class-reservas.php` |
+| Criado  | `exobooking-core/includes/class-rest-reservas-controller.php` |
+| Alterado| `exobooking-core/includes/class-activator.php` |
+| Alterado| `exobooking-core/includes/class-estoque-vagas.php` |
+| Alterado| `exobooking-core/includes/class-exobooking-core.php` |
+| Alterado| `exobooking-core/exobooking-core.php` (versão 0.4.0) |
+| Alterado| `VERSION` |
+| Alterado| `CHANGELOG.md` |
+
+---
+
 ## [0.3.0] - 2025-02-19
 
 ### Adicionado
@@ -90,6 +156,8 @@ Alterações notáveis do projeto ExoBooking Core. O formato é baseado em [Keep
 
 ---
 
+[0.5.0]: https://github.com/ruinedprince/exobooking-core/releases/tag/v0.5.0
+[0.4.0]: https://github.com/ruinedprince/exobooking-core/releases/tag/v0.4.0
 [0.3.0]: https://github.com/ruinedprince/exobooking-core/releases/tag/v0.3.0
 [0.2.0]: https://github.com/ruinedprince/exobooking-core/releases/tag/v0.2.0
 [0.1.0]: https://github.com/ruinedprince/exobooking-core/releases/tag/v0.1.0

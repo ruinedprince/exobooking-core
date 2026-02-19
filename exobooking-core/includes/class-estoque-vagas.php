@@ -47,6 +47,29 @@ class ExoBooking_Core_Estoque_Vagas {
 	}
 
 	/**
+	 * Retorna todas as linhas de estoque para um passeio (para uso no admin).
+	 *
+	 * @since  0.5.0
+	 * @param  int $passeio_id ID do post do CPT passeio.
+	 * @return array Lista de objetos com id, passeio_id, data, vagas_total, vagas_reservadas.
+	 */
+	public static function get_estoque_por_passeio( $passeio_id ) {
+		global $wpdb;
+		$table = ExoBooking_Core_Estoque_Vagas_Schema::get_table_name();
+		$passeio_id = absint( $passeio_id );
+		if ( ! $passeio_id ) {
+			return array();
+		}
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, passeio_id, data, vagas_total, vagas_reservadas FROM $table WHERE passeio_id = %d ORDER BY data ASC",
+				$passeio_id
+			)
+		);
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
 	 * Retorna o número de vagas disponíveis (vagas_total - vagas_reservadas) para um passeio e data.
 	 *
 	 * @since  0.2.0
@@ -143,6 +166,34 @@ class ExoBooking_Core_Estoque_Vagas {
 			array( '%d', '%s' )
 		);
 		return $wpdb->last_error === '';
+	}
+
+	/**
+	 * Reserva uma vaga de forma atômica (anti-overbooking). Executa um único UPDATE condicional
+	 * para evitar race conditions em requisições simultâneas (EBC-5).
+	 *
+	 * @since  0.4.0
+	 * @param  int    $passeio_id ID do post do CPT passeio.
+	 * @param  string $data       Data no formato Y-m-d.
+	 * @return bool True se uma vaga foi reservada; false se não há vaga disponível ou estoque inexistente.
+	 */
+	public static function reservar_vaga( $passeio_id, $data ) {
+		global $wpdb;
+		$table = ExoBooking_Core_Estoque_Vagas_Schema::get_table_name();
+		$passeio_id = absint( $passeio_id );
+		$data = self::normalize_date( $data );
+		if ( ! $data ) {
+			return false;
+		}
+
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE $table SET vagas_reservadas = vagas_reservadas + 1 WHERE passeio_id = %d AND data = %s AND (vagas_total - vagas_reservadas) >= 1",
+				$passeio_id,
+				$data
+			)
+		);
+		return $wpdb->last_error === '' && $wpdb->rows_affected > 0;
 	}
 
 	/**

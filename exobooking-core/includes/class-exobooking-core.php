@@ -64,6 +64,13 @@ class ExoBooking_Core {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-cpt-passeios.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-estoque-vagas-schema.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-estoque-vagas.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-reservas-schema.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-reservas.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-rest-reservas-controller.php';
+		if ( is_admin() ) {
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-admin-estoque-metabox.php';
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-admin-reservas.php';
+		}
 	}
 
 	/**
@@ -89,7 +96,11 @@ class ExoBooking_Core {
 	 * @access   private
 	 */
 	private function define_admin_hooks() {
-		// Admin hooks serão adicionados aqui quando necessário
+		if ( ! is_admin() ) {
+			return;
+		}
+		ExoBooking_Core_Admin_Estoque_Metabox::init();
+		ExoBooking_Core_Admin_Reservas::init();
 	}
 
 	/**
@@ -101,6 +112,17 @@ class ExoBooking_Core {
 	 */
 	private function define_public_hooks() {
 		add_action( 'init', array( 'ExoBooking_Core_CPT_Passeios', 'register' ), 10 );
+		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+	}
+
+	/**
+	 * Registra as rotas da API REST (EBC-5).
+	 *
+	 * @since  0.4.0
+	 */
+	public function register_rest_routes() {
+		$controller = new ExoBooking_Core_REST_Reservas_Controller();
+		$controller->register_routes();
 	}
 
 	/**
