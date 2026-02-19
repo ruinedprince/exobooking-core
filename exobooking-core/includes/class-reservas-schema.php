@@ -1,8 +1,9 @@
 <?php
 /**
- * Schema da tabela de reservas (EBC-5).
+ * Schema da tabela de reservas (EBC-5, EBC-6).
  *
  * Define o nome da tabela e o SQL para criação via dbDelta.
+ * Inclui campo status (pendente, confirmada, cancelada) desde EBC-6.
  *
  * @since      0.4.0
  * @package    ExoBooking_Core
@@ -27,6 +28,22 @@ class ExoBooking_Core_Reservas_Schema {
 	 * @var string
 	 */
 	const TABLE_NAME = 'exobooking_reservas';
+
+	/**
+	 * Nome da coluna de status (EBC-6).
+	 *
+	 * @since  0.6.0
+	 * @var string
+	 */
+	const COL_STATUS = 'status';
+
+	/**
+	 * Valores permitidos para status da reserva (EBC-6).
+	 *
+	 * @since  0.6.0
+	 * @var string[]
+	 */
+	const STATUS_VALIDOS = array( 'pendente', 'confirmada', 'cancelada' );
 
 	/**
 	 * Retorna o nome completo da tabela com prefixo do site.
@@ -58,9 +75,11 @@ class ExoBooking_Core_Reservas_Schema {
 			data date NOT NULL,
 			nome_cliente varchar(255) NOT NULL DEFAULT '',
 			email_cliente varchar(255) NOT NULL DEFAULT '',
+			status varchar(20) NOT NULL DEFAULT 'pendente',
 			criado_em datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY (id),
-			KEY passeio_data (passeio_id, data)
+			KEY passeio_data (passeio_id, data),
+			KEY status (status)
 		) $charset_collate;";
 
 		return $sql;
@@ -75,6 +94,28 @@ class ExoBooking_Core_Reservas_Schema {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		$sql = self::get_create_table_sql();
 		dbDelta( $sql );
+	}
+
+	/**
+	 * Atualiza a tabela se necessário (ex.: adiciona coluna status em instalações antigas). EBC-6.
+	 *
+	 * @since  0.6.0
+	 * @global wpdb $wpdb
+	 */
+	public static function maybe_upgrade() {
+		global $wpdb;
+		$table_name = self::get_table_name();
+		$column_name = self::COL_STATUS;
+		$result = $wpdb->get_results( $wpdb->prepare(
+			"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+			DB_NAME,
+			$table_name,
+			$column_name
+		) );
+		if ( empty( $result ) ) {
+			$wpdb->query( "ALTER TABLE $table_name ADD COLUMN $column_name varchar(20) NOT NULL DEFAULT 'pendente' AFTER email_cliente" );
+			$wpdb->query( "ALTER TABLE $table_name ADD KEY status ($column_name)" );
+		}
 	}
 
 	/**

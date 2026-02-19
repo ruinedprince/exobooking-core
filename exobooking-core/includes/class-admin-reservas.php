@@ -1,6 +1,6 @@
 <?php
 /**
- * Página admin "Reservas" para listar reservas realizadas.
+ * Página admin "Reservas" para listar reservas realizadas (EBC-6: coluna Status).
  *
  * Submenu sob Passeios.
  *
@@ -54,6 +54,22 @@ class ExoBooking_Core_Admin_Reservas {
 	}
 
 	/**
+	 * Retorna o rótulo traduzido do status da reserva (EBC-6).
+	 *
+	 * @since  0.6.0
+	 * @param  string $status pendente, confirmada ou cancelada.
+	 * @return string
+	 */
+	public static function format_status( $status ) {
+		$labels = array(
+			'pendente'   => __( 'Pendente', 'exobooking-core' ),
+			'confirmada' => __( 'Confirmada', 'exobooking-core' ),
+			'cancelada'  => __( 'Cancelada', 'exobooking-core' ),
+		);
+		return isset( $labels[ $status ] ) ? $labels[ $status ] : $status;
+	}
+
+	/**
 	 * Renderiza a página de listagem de reservas.
 	 *
 	 * @since  0.5.0
@@ -74,21 +90,24 @@ class ExoBooking_Core_Admin_Reservas {
 			<h1 class="wp-heading-inline"><?php esc_html_e( 'Reservas', 'exobooking-core' ); ?></h1>
 			<p><?php esc_html_e( 'Listagem das reservas realizadas via API ou sistema.', 'exobooking-core' ); ?></p>
 
-			<?php if ( empty( $itens ) ) : ?>
-				<p><?php esc_html_e( 'Nenhuma reserva encontrada.', 'exobooking-core' ); ?></p>
-			<?php else : ?>
-				<table class="wp-list-table widefat fixed striped">
-					<thead>
+			<table class="wp-list-table widefat fixed striped">
+				<thead>
+					<tr>
+						<th scope="col" class="column-id" style="width: 60px;"><?php esc_html_e( 'ID', 'exobooking-core' ); ?></th>
+						<th scope="col" class="column-cliente"><?php esc_html_e( 'Cliente', 'exobooking-core' ); ?></th>
+						<th scope="col" class="column-email"><?php esc_html_e( 'E-mail', 'exobooking-core' ); ?></th>
+						<th scope="col" class="column-passeio"><?php esc_html_e( 'Passeio', 'exobooking-core' ); ?></th>
+						<th scope="col" class="column-data"><?php esc_html_e( 'Data', 'exobooking-core' ); ?></th>
+						<th scope="col" class="column-status"><?php esc_html_e( 'Status', 'exobooking-core' ); ?></th>
+						<th scope="col" class="column-criado"><?php esc_html_e( 'Criado em', 'exobooking-core' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if ( empty( $itens ) ) : ?>
 						<tr>
-							<th scope="col" class="column-id" style="width: 60px;"><?php esc_html_e( 'ID', 'exobooking-core' ); ?></th>
-							<th scope="col" class="column-cliente"><?php esc_html_e( 'Cliente', 'exobooking-core' ); ?></th>
-							<th scope="col" class="column-email"><?php esc_html_e( 'E-mail', 'exobooking-core' ); ?></th>
-							<th scope="col" class="column-passeio"><?php esc_html_e( 'Passeio', 'exobooking-core' ); ?></th>
-							<th scope="col" class="column-data"><?php esc_html_e( 'Data', 'exobooking-core' ); ?></th>
-							<th scope="col" class="column-criado"><?php esc_html_e( 'Criado em', 'exobooking-core' ); ?></th>
+							<td colspan="7" class="column-response" style="text-align: center; padding: 1.5em;"><?php esc_html_e( 'Nenhuma reserva encontrada.', 'exobooking-core' ); ?></td>
 						</tr>
-					</thead>
-					<tbody>
+					<?php else : ?>
 						<?php foreach ( $itens as $r ) : ?>
 							<tr>
 								<td><?php echo (int) $r->id; ?></td>
@@ -109,13 +128,15 @@ class ExoBooking_Core_Admin_Reservas {
 									?>
 								</td>
 								<td><?php echo esc_html( $r->data ); ?></td>
+								<td><?php echo esc_html( self::format_status( isset( $r->status ) ? $r->status : 'pendente' ) ); ?></td>
 								<td><?php echo esc_html( $r->criado_em ); ?></td>
 							</tr>
 						<?php endforeach; ?>
-					</tbody>
-				</table>
+					<?php endif; ?>
+				</tbody>
+			</table>
 
-				<?php if ( $total_pages > 1 ) : ?>
+			<?php if ( ! empty( $itens ) && $total_pages > 1 ) : ?>
 					<div class="tablenav bottom">
 						<div class="tablenav-pages">
 							<span class="pagination-links">
@@ -136,7 +157,6 @@ class ExoBooking_Core_Admin_Reservas {
 							<span class="displaying-num"><?php echo esc_html( sprintf( _n( '%s item', '%s itens', $total, 'exobooking-core' ), number_format_i18n( $total ) ) ); ?></span>
 						</div>
 					</div>
-				<?php endif; ?>
 			<?php endif; ?>
 		</div>
 		<?php

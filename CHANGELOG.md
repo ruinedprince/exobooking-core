@@ -4,6 +4,36 @@ Alterações notáveis do projeto ExoBooking Core. O formato é baseado em [Keep
 
 ---
 
+## [0.6.0] - 2025-02-19
+
+### Adicionado (EBC-6: tabela/CPT de reservas)
+
+- **Campo status na tabela de reservas:** valores `pendente`, `confirmada`, `cancelada`; coluna criada na ativação ou via upgrade em instalações existentes.
+- **Schema:** `ExoBooking_Core_Reservas_Schema::maybe_upgrade()` adiciona a coluna `status` se não existir; constantes `COL_STATUS` e `STATUS_VALIDOS`.
+- **Reservas:** `ExoBooking_Core_Reservas::criar()` grava `status = 'pendente'`; `get_todas( $args )` inclui `status` no SELECT e aceita filtro `'status'` em `$args`; `get_total( $args )` aceita filtro por status; novo método `atualizar_status( $reserva_id, $status )`.
+- **REST:** resposta do POST de criação de reserva passa a incluir o campo `status` (ex.: `"pendente"`).
+- **Admin Reservas:** coluna "Status" na listagem (Pendente / Confirmada / Cancelada); helper `format_status()` para rótulos traduzidos.
+
+### Alterado
+
+- **Activator:** após `create_table()` da tabela de reservas, chama `ExoBooking_Core_Reservas_Schema::maybe_upgrade()`.
+- **Versão do plugin:** 0.5.0 → 0.6.0.
+
+### Arquivos alterados (EBC-6)
+
+| Ação     | Arquivo |
+|----------|---------|
+| Alterado | `exobooking-core/includes/class-reservas-schema.php` (coluna status, maybe_upgrade) |
+| Alterado | `exobooking-core/includes/class-reservas.php` (criar com status, get_todas/get_total com status, atualizar_status) |
+| Alterado | `exobooking-core/includes/class-rest-reservas-controller.php` (resposta com status) |
+| Alterado | `exobooking-core/includes/class-admin-reservas.php` (coluna Status, format_status) |
+| Alterado | `exobooking-core/includes/class-activator.php` (chamada maybe_upgrade) |
+| Alterado | `exobooking-core/exobooking-core.php` (versão 0.6.0) |
+| Alterado | `VERSION` |
+| Alterado | `CHANGELOG.md` |
+
+---
+
 ## [0.5.0] - 2025-02-19
 
 ### Adicionado

@@ -131,6 +131,7 @@ class ExoBooking_Core_REST_Reservas_Controller extends WP_REST_Controller {
 				'data'       => $data_normalized,
 				'nome'       => $nome,
 				'email'      => sanitize_email( $email ),
+				'status'     => 'pendente',
 			),
 			200
 		);
