@@ -1,0 +1,19 @@
+## Descrição
+
+Implementar a base do plugin ExoBooking Core e a regra de ouro contra overbooking: estrutura mínima do plugin (arquivo principal, cabeçalho, ativação/desativação), CPT "Passeios", tabela ou meta de estoque por passeio/dia, endpoint REST para criar reserva com lógica anti-overbooking (transação/lock ou UPDATE condicional), tabela de reservas e tela no admin listando reservas (ID, Cliente, Passeio, Status). Inclui revisão de código (segurança, nonce, sanitização), empacotamento em .zip e opcionalmente docker-compose para ambiente de teste.
+
+## Objetivo
+
+Entregar a base funcional do plugin WordPress ExoBooking Core com proteção contra overbooking: ao receber requisições simultâneas para vagas limitadas, o sistema deve aprovar apenas até o limite e rejeitar o restante com 4xx, garantindo consistência no banco.
+
+## Critérios de Aceitação
+
+- [ ] Estrutura mínima do plugin (arquivo principal, cabeçalho, ativação/desativação).
+- [ ] CPT "Passeios" registrado (nome no singular).
+- [ ] Estoque por dia: tabela ou meta com passeio_id, data, vagas_total, vagas_reservadas (ou vagas_disponiveis); schema claro se usar meta.
+- [ ] Endpoint REST para criar reserva: recebe identificador do passeio, data, dados do cliente (nome, e-mail); implementa anti-overbooking (transação + lock ou UPDATE condicional); retorna 200 quando aprovar e 4xx quando negar (ex.: sem vagas).
+- [ ] Tabela/CPT de reservas com ID, cliente, passeio, status, data da reserva.
+- [ ] Tela no wp-admin listando reservas (ID, Cliente, Passeio, Status); subpágina em Passeios ou menu ExoBooking/Reservas; WP_List_Table ou listagem com $wpdb.
+- [ ] Revisão de código: nomes, comentários, segurança (nonce, permissões, sanitização).
+- [ ] Plugin empacotável em .zip (somente pasta do plugin, sem .git).
+- [ ] (Opcional) docker-compose.yml com WordPress + MySQL para testar o plugin.
