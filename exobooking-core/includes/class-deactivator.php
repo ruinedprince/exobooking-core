@@ -31,9 +31,10 @@ class ExoBooking_Core_Deactivator {
 	public static function deactivate() {
 		// Limpar agendamentos (cron jobs) se houver
 		// Exemplo: wp_clear_scheduled_hook( 'exobooking_core_daily_task' );
-		
-		// Não remover dados do banco de dados (padrão WordPress)
-		// Os dados permanecem para caso o plugin seja reativado
+
+		// Decisão EBC-4: não remover a tabela exobooking_estoque_vagas na desativação.
+		// Padrão WordPress: dados permanecem para caso o plugin seja reativado.
+		// Para remover a tabela, usar ExoBooking_Core_Estoque_Vagas_Schema::get_drop_table_sql() e $wpdb->query().
 	}
 
 }

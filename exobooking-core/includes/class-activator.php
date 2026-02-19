@@ -65,10 +65,10 @@ class ExoBooking_Core_Activator {
 			);
 		}
 		
-		// Criar estrutura de diretórios necessários (se aplicável)
-		// Por enquanto, apenas verificamos requisitos
-		// Futuramente, aqui podemos criar tabelas do banco de dados, etc.
-		
+		// Criar tabela de estoque de vagas por passeio e data (EBC-4)
+		require_once plugin_dir_path( __FILE__ ) . 'class-estoque-vagas-schema.php';
+		ExoBooking_Core_Estoque_Vagas_Schema::create_table();
+
 		// Registrar opção de versão do plugin
 		update_option( 'exobooking_core_version', EXOBOOKING_CORE_VERSION );
 	}

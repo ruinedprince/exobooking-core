@@ -4,6 +4,36 @@ Alterações notáveis do projeto ExoBooking Core. O formato é baseado em [Keep
 
 ---
 
+## [0.3.0] - 2025-02-19
+
+### Adicionado
+
+- **Estoque de vagas por passeio e data** (tarefa EBC-4)
+  - Tabela `{prefixo}_exobooking_estoque_vagas` (passeio_id, data, vagas_total, vagas_reservadas) criada na ativação via `dbDelta`
+  - Classe `ExoBooking_Core_Estoque_Vagas_Schema` em `exobooking-core/includes/class-estoque-vagas-schema.php` (nome da tabela, SQL de criação/remoção)
+  - Classe `ExoBooking_Core_Estoque_Vagas` em `exobooking-core/includes/class-estoque-vagas.php`: `get_estoque()`, `get_vagas_disponiveis()`, `set_vagas_totais()`, `incrementar_reservadas()`, `normalize_date()`
+  - Integração no activator (criação da tabela) e no core (carregamento das classes); desativador documentado para não remover a tabela
+
+### Alterado
+
+- **Activator:** inclusão do schema de estoque e chamada a `ExoBooking_Core_Estoque_Vagas_Schema::create_table()` na ativação
+- **Deactivator:** comentário documentando que a tabela de estoque não é removida na desativação
+- **Core:** carregamento de `class-estoque-vagas-schema.php` e `class-estoque-vagas.php` em `load_dependencies()`
+- **Docker:** exposição da porta 3306 do serviço `db` para acesso ao MySQL a partir do host
+
+### Arquivos criados/alterados (EBC-4)
+
+| Ação    | Arquivo |
+|---------|---------|
+| Criado  | `exobooking-core/includes/class-estoque-vagas-schema.php` |
+| Criado  | `exobooking-core/includes/class-estoque-vagas.php` |
+| Alterado| `exobooking-core/includes/class-activator.php` |
+| Alterado| `exobooking-core/includes/class-deactivator.php` |
+| Alterado| `exobooking-core/includes/class-exobooking-core.php` |
+| Alterado| `docker-compose.yml` (porta 3306 no db) |
+
+---
+
 ## [0.2.0] - 2026-02-19
 
 ### Adicionado
@@ -60,5 +90,6 @@ Alterações notáveis do projeto ExoBooking Core. O formato é baseado em [Keep
 
 ---
 
+[0.3.0]: https://github.com/ruinedprince/exobooking-core/releases/tag/v0.3.0
 [0.2.0]: https://github.com/ruinedprince/exobooking-core/releases/tag/v0.2.0
 [0.1.0]: https://github.com/ruinedprince/exobooking-core/releases/tag/v0.1.0

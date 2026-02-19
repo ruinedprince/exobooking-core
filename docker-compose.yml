@@ -29,6 +29,8 @@ services:
     image: mysql:8.0
     container_name: exobooking-db
     restart: unless-stopped
+    ports:
+      - "3307:3307"
     environment:
       MYSQL_DATABASE: wordpress
       MYSQL_USER: wordpress

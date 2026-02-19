@@ -62,6 +62,8 @@ class ExoBooking_Core {
 	 */
 	private function load_dependencies() {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-cpt-passeios.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-estoque-vagas-schema.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-estoque-vagas.php';
 	}
 
 	/**
