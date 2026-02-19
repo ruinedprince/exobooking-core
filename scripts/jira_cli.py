@@ -7,8 +7,10 @@ Uso: variáveis JIRA_SITE, JIRA_EMAIL e JIRA_API_TOKEN no .env ou no ambiente.
 Comandos disponíveis:
   create      - Criar uma nova issue/tarefa
   get         - Buscar informações de uma issue
+  list        - Listar todas as issues de um projeto (ex.: EBC = ExoBookingCore)
   transitions - Listar transições disponíveis para uma issue
   transition  - Executar uma transição de status em uma issue
+  update      - Atualizar uma issue existente
 """
 
 import argparse
@@ -44,26 +46,32 @@ JIRA_API_TOKEN = os.getenv("JIRA_API_TOKEN", "").strip()
 
 def fix_encoding(text: str) -> str:
     """
-    Corrige problemas de encoding em strings recebidas da linha de comando.
-    Tenta detectar e corrigir encoding incorreto (ex: UTF-8 interpretado como Latin-1).
+    Corrige problemas de encoding (ex.: UTF-8 interpretado como Latin-1, mojibake).
+    Usado tanto na CLI quanto ao normalizar textos vindos da API do Jira.
     """
     if not text:
         return text
-    
-    # Se já está correto, retorna como está
+
+    # Tenta corrigir mojibake: bytes UTF-8 lidos como Latin-1 (comum em APIs)
     try:
-        text.encode('utf-8').decode('utf-8')
+        corrected = text.encode("latin-1").decode("utf-8")
+        if corrected != text:
+            return corrected
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        pass
+
+    # Garante que está em UTF-8 válido
+    try:
+        text.encode("utf-8").decode("utf-8")
         return text
     except (UnicodeEncodeError, UnicodeDecodeError):
         pass
-    
-    # Tenta corrigir: assume que foi UTF-8 interpretado como Latin-1
+
     try:
-        return text.encode('latin-1').decode('utf-8')
+        return text.encode("latin-1").decode("utf-8")
     except (UnicodeEncodeError, UnicodeDecodeError):
         pass
-    
-    # Se não conseguir corrigir, retorna como está (melhor que quebrar)
+
     return text
 
 
@@ -200,6 +208,44 @@ def get_issue(issue_key: str) -> dict:
     return r.json()
 
 
+def search_issues(project_key: str, max_results: int = 100, fields: Optional[list] = None) -> list:
+    """
+    Lista issues do projeto via JQL (API REST v3 /rest/api/3/search/jql).
+    Retorna lista de issues com key e fields (summary, description por padrão).
+    Usa nextPageToken para paginação (API atual do Jira Cloud).
+    """
+    url = f"https://{JIRA_SITE}/rest/api/3/search/jql"
+    headers = {
+        "Accept": "application/json",
+        "Authorization": get_auth_header(),
+    }
+    if fields is None:
+        fields = ["summary", "description"]
+    jql = f"project = {project_key}"
+    all_issues = []
+    next_page_token = None
+    page_size = min(50, max_results)
+    while len(all_issues) < max_results:
+        params = {
+            "jql": jql,
+            "maxResults": page_size,
+            "fields": ",".join(fields),
+        }
+        if next_page_token is not None:
+            params["nextPageToken"] = next_page_token
+        r = requests.get(url, headers=headers, params=params, timeout=30)
+        r.raise_for_status()
+        data = r.json()
+        issues = data.get("issues", [])
+        if not issues:
+            break
+        all_issues.extend(issues)
+        next_page_token = data.get("nextPageToken")
+        if not next_page_token or len(all_issues) >= max_results:
+            break
+    return all_issues[:max_results]
+
+
 def get_transitions(issue_key: str) -> list:
     """Obtém as transições disponíveis para uma issue."""
     url = f"https://{JIRA_SITE}/rest/api/3/issue/{issue_key}/transitions"
@@ -279,6 +325,11 @@ def main():
     update_parser.add_argument("--summary", "-s", default="", help="Novo título da issue")
     update_parser.add_argument("--description", "-d", default="", help="Nova descrição da issue")
     update_parser.add_argument("--description-file", default="", help="Ler descrição de um arquivo (sobrescreve -d)")
+
+    # list – listar issues do projeto (quadro ExoBookingCore = projeto EBC)
+    list_parser = subparsers.add_parser("list", help="Listar todas as issues do projeto (ex.: EBC)")
+    list_parser.add_argument("--project", "-p", default="EBC", help="Chave do projeto (padrão: EBC)")
+    list_parser.add_argument("--max-results", "-n", type=int, default=100, help="Máximo de issues (padrão: 100)")
 
     args = parser.parse_args()
 
@@ -365,6 +416,16 @@ def main():
             update_issue(args.issue_key, summary=summary, description=description)
             print(f"Issue atualizada: {args.issue_key}")
             print(f"URL: https://{JIRA_SITE}/browse/{args.issue_key}")
+
+        elif args.command == "list":
+            issues = search_issues(args.project, max_results=args.max_results)
+            print(f"\n=== Issues do projeto {args.project} ({len(issues)} encontradas) ===\n")
+            for issue in issues:
+                key = issue.get("key", "?")
+                summary = (issue.get("fields") or {}).get("summary", "")
+                print(f"  {key}: {summary}")
+            if not issues:
+                print("  Nenhuma issue encontrada.")
 
         else:
             parser.print_help()
