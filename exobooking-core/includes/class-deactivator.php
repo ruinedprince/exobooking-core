@@ -1,6 +1,6 @@
 <?php
 /**
- * Fired during plugin deactivation
+ * Fired during plugin deactivation.
  *
  * @link       https://github.com/ruinedprince/exobooking-core
  * @since      0.1.0
@@ -9,10 +9,17 @@
  * @subpackage ExoBooking_Core/includes
  */
 
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
+
 /**
  * Fired during plugin deactivation.
  *
- * This class defines all code necessary to run during the plugin's deactivation.
+ * Executa as rotinas de limpeza necessárias ao desativar o plugin (ex.: cancelar
+ * agendamentos de cron). As tabelas customizadas são preservadas intencionalmente
+ * para não perder dados caso o plugin seja reativado.
  *
  * @since      0.1.0
  * @package    ExoBooking_Core
@@ -22,9 +29,11 @@
 class ExoBooking_Core_Deactivator {
 
 	/**
-	 * Short Description. (use period)
+	 * Rotina de desativação do plugin.
 	 *
-	 * Long Description.
+	 * Cancela agendamentos de cron (se houver) e realiza outras limpezas necessárias.
+	 * As tabelas do banco de dados são mantidas por decisão de projeto (EBC-4) para
+	 * preservar dados ao reativar o plugin.
 	 *
 	 * @since    0.1.0
 	 */

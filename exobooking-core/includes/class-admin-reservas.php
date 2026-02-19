@@ -72,9 +72,16 @@ class ExoBooking_Core_Admin_Reservas {
 	/**
 	 * Renderiza a página de listagem de reservas.
 	 *
+	 * Verifica explicitamente a capability antes de renderizar (defesa em profundidade),
+	 * mesmo que o WordPress já bloqueie o acesso ao menu por capability.
+	 *
 	 * @since  0.5.0
 	 */
 	public static function render_page() {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( esc_html__( 'Você não tem permissão para acessar esta página.', 'exobooking-core' ) );
+		}
+
 		$paged = isset( $_GET['paged'] ) ? max( 1, (int) $_GET['paged'] ) : 1;
 		$offset = ( $paged - 1 ) * self::PER_PAGE;
 		$total  = ExoBooking_Core_Reservas::get_total();

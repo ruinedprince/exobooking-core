@@ -1,18 +1,24 @@
 <?php
 /**
- * Fired during plugin activation
+ * Fired during plugin activation.
  *
- * @link       https://github.com/ruinedrprince/exobooking-core
+ * @link       https://github.com/ruinedprince/exobooking-core
  * @since      0.1.0
  *
  * @package    ExoBooking_Core
  * @subpackage ExoBooking_Core/includes
  */
 
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
+
 /**
  * Fired during plugin activation.
  *
- * This class defines all code necessary to run during the plugin's activation.
+ * Verifica requisitos mínimos de versão (WordPress e PHP) e cria as tabelas
+ * customizadas do plugin via dbDelta.
  *
  * @since      0.1.0
  * @package    ExoBooking_Core
@@ -22,9 +28,11 @@
 class ExoBooking_Core_Activator {
 
 	/**
-	 * Short Description. (use period)
+	 * Rotina de ativação do plugin.
 	 *
-	 * Long Description.
+	 * Valida versões mínimas de WordPress e PHP, cria as tabelas de estoque
+	 * de vagas e de reservas caso ainda não existam, e registra a versão
+	 * instalada na tabela de opções do WordPress.
 	 *
 	 * @since    0.1.0
 	 */

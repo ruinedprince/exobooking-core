@@ -111,6 +111,7 @@ class ExoBooking_Core_Reservas {
 		if ( $status !== null ) {
 			return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table WHERE status = %s", $status ) );
 		}
+		// $table deriva de $wpdb->prefix (fonte confiável); interpolação direta é segura aqui.
 		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table" );
 	}
 

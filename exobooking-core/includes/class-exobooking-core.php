@@ -128,12 +128,14 @@ class ExoBooking_Core {
 	/**
 	 * Run the plugin.
 	 *
+	 * Todos os hooks já foram registrados no construtor. Este método existe para
+	 * manter compatibilidade com o ponto de entrada em exobooking-core.php e pode
+	 * ser usado para inicializações adicionais no futuro.
+	 *
 	 * @since    0.1.0
 	 */
 	public function run() {
-		$this->set_locale();
-		$this->define_admin_hooks();
-		$this->define_public_hooks();
+		// Hooks registrados no __construct(); nenhuma ação adicional necessária.
 	}
 
 	/**

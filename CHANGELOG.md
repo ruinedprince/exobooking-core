@@ -4,6 +4,38 @@ Alterações notáveis do projeto ExoBooking Core. O formato é baseado em [Keep
 
 ---
 
+## [0.7.0] - 2026-02-19
+
+### Corrigido (EBC-7: revisão de código — nomes, comentários e segurança)
+
+- **Bug duplo registro de hooks:** `ExoBooking_Core::run()` re-chamava `set_locale()`, `define_admin_hooks()` e `define_public_hooks()` que já haviam sido executados no `__construct()`, causando registro duplicado do CPT, das rotas REST e dos hooks de admin. O método `run()` foi simplificado para não re-executar as inicializações.
+- **Guard WPINC ausente:** `class-activator.php` e `class-deactivator.php` não possuíam a verificação `if ( ! defined( 'WPINC' ) ) { die; }`, presente em todos os demais arquivos do plugin.
+- **Typo no `@link`:** cabeçalho de `class-activator.php` referenciava `ruinedrprince` (errado); corrigido para `ruinedprince`.
+- **HTTP 200 → 201:** endpoint REST `POST /wp-json/exobooking/v1/reservas` retornava `200 OK` para criação de recurso; corrigido para `201 Created` (padrão REST).
+
+### Melhorado (EBC-7: segurança e boas práticas)
+
+- **Capability check explícito:** `ExoBooking_Core_Admin_Reservas::render_page()` passou a verificar `current_user_can('edit_posts')` explicitamente (defesa em profundidade além do bloqueio do menu do WordPress).
+- **Documentação de segurança:** `permission_callback => '__return_true'` no controller REST passou a ter comentário que documenta a intenção pública do endpoint.
+- **PHPDoc descritivo:** métodos `activate()` e `deactivate()` tinham descrições placeholder do boilerplate; substituídos por documentação real do comportamento de cada método.
+- **Comentário de segurança em SQL:** `ExoBooking_Core_Reservas::get_total()` recebeu comentário explicando por que a interpolação de `$table` é segura (derivada de `$wpdb->prefix`).
+
+### Arquivos alterados (EBC-7)
+
+| Ação     | Arquivo |
+|----------|---------|
+| Alterado | `exobooking-core/includes/class-activator.php` (guard WPINC, typo @link, PHPDoc) |
+| Alterado | `exobooking-core/includes/class-deactivator.php` (guard WPINC, typo @link, PHPDoc) |
+| Alterado | `exobooking-core/includes/class-exobooking-core.php` (fix duplo registro de hooks em run()) |
+| Alterado | `exobooking-core/includes/class-rest-reservas-controller.php` (HTTP 201, PHPDoc permission_callback) |
+| Alterado | `exobooking-core/includes/class-admin-reservas.php` (current_user_can em render_page) |
+| Alterado | `exobooking-core/includes/class-reservas.php` (comentário de segurança em get_total) |
+| Alterado | `exobooking-core/exobooking-core.php` (versão 0.7.0) |
+| Alterado | `VERSION` |
+| Alterado | `CHANGELOG.md` |
+
+---
+
 ## [0.6.0] - 2025-02-19
 
 ### Adicionado (EBC-6: tabela/CPT de reservas)

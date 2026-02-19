@@ -39,6 +39,10 @@ class ExoBooking_Core_REST_Reservas_Controller extends WP_REST_Controller {
 	/**
 	 * Registra as rotas do recurso.
 	 *
+	 * O endpoint de criação de reserva é público (permission_callback retorna true
+	 * intencionalmente) para permitir que visitantes não autenticados realizem
+	 * reservas via formulário ou integração externa.
+	 *
 	 * @since  0.4.0
 	 */
 	public function register_routes() {
@@ -49,6 +53,7 @@ class ExoBooking_Core_REST_Reservas_Controller extends WP_REST_Controller {
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
+					// Endpoint público: qualquer visitante pode criar uma reserva.
 					'permission_callback' => '__return_true',
 					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
 				),
@@ -61,7 +66,7 @@ class ExoBooking_Core_REST_Reservas_Controller extends WP_REST_Controller {
 	 *
 	 * @since  0.4.0
 	 * @param  WP_REST_Request $request Requisição com body JSON.
-	 * @return WP_REST_Response|WP_Error Resposta 200 com dados da reserva ou erro 4xx/5xx.
+	 * @return WP_REST_Response|WP_Error Resposta 201 com dados da reserva ou erro 4xx/5xx.
 	 */
 	public function create_item( $request ) {
 		$passeio_id = (int) $request->get_param( 'passeio_id' );
@@ -133,7 +138,7 @@ class ExoBooking_Core_REST_Reservas_Controller extends WP_REST_Controller {
 				'email'      => sanitize_email( $email ),
 				'status'     => 'pendente',
 			),
-			200
+			201
 		);
 		return $response;
 	}
