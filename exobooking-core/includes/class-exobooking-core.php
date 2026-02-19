@@ -61,8 +61,7 @@ class ExoBooking_Core {
 	 * @access   private
 	 */
 	private function load_dependencies() {
-		// Dependências serão carregadas aqui quando necessário
-		// Por enquanto, mantemos a estrutura mínima
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-cpt-passeios.php';
 	}
 
 	/**
@@ -99,7 +98,7 @@ class ExoBooking_Core {
 	 * @access   private
 	 */
 	private function define_public_hooks() {
-		// Public hooks serão adicionados aqui quando necessário
+		add_action( 'init', array( 'ExoBooking_Core_CPT_Passeios', 'register' ), 10 );
 	}
 
 	/**

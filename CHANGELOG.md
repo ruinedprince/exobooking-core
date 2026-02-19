@@ -4,6 +4,36 @@ Alterações notáveis do projeto ExoBooking Core. O formato é baseado em [Keep
 
 ---
 
+## [0.2.0] - 2026-02-19
+
+### Adicionado
+
+- **CPT Passeios** (tarefa EBC-3)
+  - Classe `exobooking-core/includes/class-cpt-passeios.php` registrando o Custom Post Type "Passeios" (slug `passeio`)
+  - Integração em `exobooking-core/includes/class-exobooking-core.php` (carregamento e hook `init`)
+  - Labels em português (singular/plural concisos); suporte a título, editor e thumbnail; visível no menu do wp-admin
+
+### Alterado
+
+- CLI JIRA: tratamento de resposta vazia (204) no comando `transition` em `scripts/jira_cli.py`
+
+### Arquivos criados/alterados (EBC-3)
+
+| Ação    | Arquivo |
+|---------|---------|
+| Criado  | `exobooking-core/includes/class-cpt-passeios.php` |
+| Alterado| `exobooking-core/includes/class-exobooking-core.php` |
+| Alterado| `scripts/jira_cli.py` (fix 204 em transition) |
+
+### Como testar (EBC-3)
+
+1. **Ambiente:** Subir o WordPress com o plugin: `docker-compose up -d` (plugin montado em `wp-content/plugins/exobooking-core`).
+2. **Ativação:** Em wp-admin → Plugins, ativar "ExoBooking Core".
+3. **CPT no admin:** No menu lateral do wp-admin deve aparecer **"Passeios"**. Clicar para listar e usar "Adicionar novo" para criar um passeio.
+4. **WP-CLI (opcional):** `docker compose exec wordpress wp post-type list` — o tipo `passeio` deve constar na lista.
+
+---
+
 ## [0.1.0] - 2026-02-19
 
 ### Adicionado
@@ -30,4 +60,5 @@ Alterações notáveis do projeto ExoBooking Core. O formato é baseado em [Keep
 
 ---
 
+[0.2.0]: https://github.com/ruinedprince/exobooking-core/releases/tag/v0.2.0
 [0.1.0]: https://github.com/ruinedprince/exobooking-core/releases/tag/v0.1.0

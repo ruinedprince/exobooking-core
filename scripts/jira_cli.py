@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 CLI para gerenciar tarefas no Jira via API REST (Jira Cloud).
 Uso: variáveis JIRA_SITE, JIRA_EMAIL e JIRA_API_TOKEN no .env ou no ambiente.
@@ -18,6 +19,13 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+# Garantir encoding UTF-8 para stdin/stdout/stderr
+if sys.platform == 'win32':
+    import io
+    sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 try:
     import requests
     from dotenv import load_dotenv
@@ -32,6 +40,31 @@ load_dotenv(ROOT / ".env")
 JIRA_SITE = os.getenv("JIRA_SITE", "").strip().rstrip("/")
 JIRA_EMAIL = os.getenv("JIRA_EMAIL", "").strip()
 JIRA_API_TOKEN = os.getenv("JIRA_API_TOKEN", "").strip()
+
+
+def fix_encoding(text: str) -> str:
+    """
+    Corrige problemas de encoding em strings recebidas da linha de comando.
+    Tenta detectar e corrigir encoding incorreto (ex: UTF-8 interpretado como Latin-1).
+    """
+    if not text:
+        return text
+    
+    # Se já está correto, retorna como está
+    try:
+        text.encode('utf-8').decode('utf-8')
+        return text
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        pass
+    
+    # Tenta corrigir: assume que foi UTF-8 interpretado como Latin-1
+    try:
+        return text.encode('latin-1').decode('utf-8')
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        pass
+    
+    # Se não conseguir corrigir, retorna como está (melhor que quebrar)
+    return text
 
 
 def get_auth_header():
@@ -74,13 +107,16 @@ def create_issue(
     url = f"https://{JIRA_SITE}/rest/api/3/issue"
     headers = {
         "Accept": "application/json",
-        "Content-Type": "application/json",
+        "Content-Type": "application/json; charset=utf-8",
         "Authorization": get_auth_header(),
     }
+    # Garantir texto em UTF-8 (normalizar para evitar erros de codificação)
+    summary_utf8 = summary.encode("utf-8").decode("utf-8") if summary else ""
+    desc_utf8 = description.strip().encode("utf-8").decode("utf-8") if description else ""
     # Descrição em formato Atlassian Document (ADF) para API v3
     content = []
-    if description:
-        for line in description.strip().splitlines():
+    if desc_utf8:
+        for line in desc_utf8.splitlines():
             content.append({"type": "paragraph", "content": [{"type": "text", "text": line}]})
     if not content:
         content = [{"type": "paragraph", "content": [{"type": "text", "text": ""}]}]
@@ -93,7 +129,7 @@ def create_issue(
 
     fields = {
         "project": {"key": project_key},
-        "summary": summary,
+        "summary": summary_utf8,
         "issuetype": issuetype_ref,
         "description": {"type": "doc", "version": 1, "content": content},
     }
@@ -105,9 +141,51 @@ def create_issue(
         fields["startDate"] = start_date  # Pode ser ignorado se o projeto não tiver o campo
 
     payload = {"fields": fields}
-    r = requests.post(url, headers=headers, json=payload, timeout=30)
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    r = requests.post(url, headers=headers, data=body, timeout=30)
     r.raise_for_status()
     return r.json()
+
+
+def update_issue(
+    issue_key: str,
+    summary: Optional[str] = None,
+    description: Optional[str] = None,
+) -> dict:
+    """Atualiza uma issue no Jira (REST API v3)."""
+    url = f"https://{JIRA_SITE}/rest/api/3/issue/{issue_key}"
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": get_auth_header(),
+    }
+    
+    fields = {}
+    if summary is not None:
+        fields["summary"] = summary.encode("utf-8").decode("utf-8")
+    if description is not None:
+        desc_utf8 = description.strip().encode("utf-8").decode("utf-8") if description else ""
+        # Descrição em formato Atlassian Document (ADF) para API v3
+        content = []
+        if desc_utf8:
+            for line in desc_utf8.splitlines():
+                content.append({"type": "paragraph", "content": [{"type": "text", "text": line}]})
+        if not content:
+            content = [{"type": "paragraph", "content": [{"type": "text", "text": ""}]}]
+        fields["description"] = {"type": "doc", "version": 1, "content": content}
+    
+    if not fields:
+        raise ValueError("Pelo menos um campo (summary ou description) deve ser fornecido")
+    
+    payload = {"fields": fields}
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    r = requests.put(url, headers=headers, data=body, timeout=30)
+    r.raise_for_status()
+    # PUT pode retornar 204 No Content (sem corpo)
+    try:
+        return r.json() if r.content else {}
+    except ValueError:
+        return {}
 
 
 def get_issue(issue_key: str) -> dict:
@@ -147,7 +225,11 @@ def transition_issue(issue_key: str, transition_id: str) -> dict:
     }
     r = requests.post(url, headers=headers, json=payload, timeout=30)
     r.raise_for_status()
-    return r.json()
+    # Transição pode retornar 204 No Content (corpo vazio)
+    try:
+        return r.json() if r.content else {}
+    except ValueError:
+        return {}
 
 
 def format_description(desc) -> str:
@@ -191,6 +273,13 @@ def main():
     transition_parser.add_argument("issue_key", help="Chave da issue (ex: EBC-1)")
     transition_parser.add_argument("transition_id", help="ID da transição (use 'transitions' para listar)")
 
+    # update
+    update_parser = subparsers.add_parser("update", help="Atualizar uma issue existente")
+    update_parser.add_argument("issue_key", help="Chave da issue (ex: EBC-1)")
+    update_parser.add_argument("--summary", "-s", default="", help="Novo título da issue")
+    update_parser.add_argument("--description", "-d", default="", help="Nova descrição da issue")
+    update_parser.add_argument("--description-file", default="", help="Ler descrição de um arquivo (sobrescreve -d)")
+
     args = parser.parse_args()
 
     if not JIRA_SITE or not get_auth_header():
@@ -200,7 +289,10 @@ def main():
 
     try:
         if args.command == "create":
-            description = args.description
+            # Garantir encoding UTF-8 para argumentos da linha de comando
+            summary = fix_encoding(args.summary) if args.summary else ""
+            description = fix_encoding(args.description) if args.description else ""
+            
             if args.description_file:
                 p = Path(args.description_file)
                 if not p.is_absolute():
@@ -213,7 +305,7 @@ def main():
             assignee = args.assignee.strip() or None
             data = create_issue(
                 project_key=args.project,
-                summary=args.summary,
+                summary=summary,
                 description=description,
                 issue_type=args.type,
                 assignee_display_name=assignee,
@@ -251,6 +343,28 @@ def main():
             # Mostra o novo status
             issue = get_issue(args.issue_key)
             print(f"Novo status: {issue['fields']['status']['name']}")
+
+        elif args.command == "update":
+            summary = None
+            description = None
+            
+            if args.summary:
+                summary = fix_encoding(args.summary)
+            
+            if args.description_file:
+                p = Path(args.description_file)
+                if not p.is_absolute():
+                    p = ROOT / p
+                if p.exists():
+                    description = p.read_text(encoding="utf-8")
+                else:
+                    print(f"Aviso: arquivo não encontrado: {args.description_file}", file=sys.stderr)
+            elif args.description:
+                description = fix_encoding(args.description)
+            
+            update_issue(args.issue_key, summary=summary, description=description)
+            print(f"Issue atualizada: {args.issue_key}")
+            print(f"URL: https://{JIRA_SITE}/browse/{args.issue_key}")
 
         else:
             parser.print_help()
