@@ -1,6 +1,6 @@
 # Guia de versionamento semântico – ExoBooking Core
 
-O projeto usa **versionamento semântico** no formato **x.y.z** (MAJOR.MINOR.PATCH). A versão atual está definida no arquivo **`VERSION`** na raiz do projeto e deve ser replicada no cabeçalho do plugin WordPress (quando existir).
+O projeto usa **versionamento semântico** no formato **x.y.z** (MAJOR.MINOR.PATCH). A versão atual está definida no arquivo **`VERSION`** na raiz do projeto e deve ser replicada no cabeçalho do plugin WordPress.
 
 ---
 
@@ -16,7 +16,7 @@ O projeto usa **versionamento semântico** no formato **x.y.z** (MAJOR.MINOR.PAT
 
 ## Regras por grau de alteração
 
-### MAJOR (x.0.0) – “Quebra” de compatibilidade
+### MAJOR (x.0.0) – "Quebra" de compatibilidade
 
 Incremente **x** e zere **y** e **z** quando:
 
@@ -47,7 +47,7 @@ Incremente **y** e zere **z** quando:
 Incremente **z** quando:
 
 - Corrigir **bugs** (comportamento errado, overbooking, erros de validação, etc.).
-- Ajustes de **segurança** (sanitização, nonce, permissões) sem mudar a “cara” da API ou do plugin.
+- Ajustes de **segurança** (sanitização, nonce, permissões) sem mudar a "cara" da API ou do plugin.
 - Pequenas **melhorias de código** (refatoração, performance) que não alteram funcionalidade visível.
 - Ajustes em **textos**, traduções ou documentação interna.
 - Correções de **compatibilidade** com versões específicas de WP/PHP sem mudar o contrato público.
@@ -71,6 +71,7 @@ Incremente **z** quando:
 1. **Arquivo `VERSION`** (raiz do projeto) – fonte única da verdade para scripts e documentação.
 2. **Cabeçalho do plugin** – no arquivo principal do plugin, linha `Version: x.y.z` (obrigatório para o WordPress).
 3. **Releases no GitHub** – criar tag e release com o mesmo número (ex.: `v1.0.0`).
+4. **CHANGELOG.md** (raiz) – registrar alterações por versão e data.
 
 ---
 

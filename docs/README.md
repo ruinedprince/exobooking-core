@@ -11,7 +11,9 @@ docs/
 │   └── Plano_de_Acao.md
 ├── management/         # Gestão do projeto (Jira, issues)
 │   └── classificacao-issues.md
-├── VERSIONING.md       # Guia de versionamento semântico
+├── versioning/         # Versionamento (guia semântico)
+│   ├── README.md
+│   └── VERSIONING.md
 └── JIRA.md            # Integração com Jira (CLI e uso)
 ```
 
@@ -26,4 +28,5 @@ docs/
 - **[JIRA.md](JIRA.md)** — Como usar o CLI para criar issues no Jira
 
 ### Versionamento
-- **[VERSIONING.md](VERSIONING.md)** — Guia de versionamento semântico (x.y.z)
+- **[versioning/VERSIONING.md](versioning/VERSIONING.md)** — Guia de versionamento semântico (x.y.z)
+- **`../CHANGELOG.md`** — Histórico de alterações por versão

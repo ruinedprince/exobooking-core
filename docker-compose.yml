@@ -1,0 +1,48 @@
+# ExoBooking Core - ambiente isolado
+# Não afeta outros projetos: nomes de containers, rede e volumes são exclusivos.
+# Porta 9080 evita conflito com outros WordPress (ex.: 8080). Altere em "ports" se precisar.
+
+version: '3.8'
+
+services:
+  wordpress:
+    image: wordpress:latest
+    container_name: exobooking-wp
+    restart: unless-stopped
+    ports:
+      - "9080:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DEBUG: 1
+    volumes:
+      - exobooking_wordpress_data:/var/www/html
+      - ./exobooking-core:/var/www/html/wp-content/plugins/exobooking-core
+    depends_on:
+      - db
+    networks:
+      - exobooking_network
+
+  db:
+    image: mysql:8.0
+    container_name: exobooking-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - exobooking_db_data:/var/lib/mysql
+    networks:
+      - exobooking_network
+
+volumes:
+  exobooking_wordpress_data:
+  exobooking_db_data:
+
+networks:
+  exobooking_network:
+    driver: bridge

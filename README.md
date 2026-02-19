@@ -11,7 +11,7 @@ Plugin WordPress instalável que implementa um motor de reservas com **proteçã
 
 ## 📚 Documentação
 
-- **Versão:** definida em [`VERSION`](VERSION). Guia de versionamento: [`docs/VERSIONING.md`](docs/VERSIONING.md)
+- **Versão:** definida em [`VERSION`](VERSION). Guia de versionamento: [`docs/versioning/VERSIONING.md`](docs/versioning/VERSIONING.md). Histórico: [CHANGELOG.md](CHANGELOG.md)
 - **Desafio técnico:** [`docs/challenge/Exo_Booking_Core.md`](docs/challenge/Exo_Booking_Core.md)
 - **Plano de ação:** [`docs/challenge/Plano_de_Acao.md`](docs/challenge/Plano_de_Acao.md)
 - **Integração Jira:** [`docs/JIRA.md`](docs/JIRA.md)
