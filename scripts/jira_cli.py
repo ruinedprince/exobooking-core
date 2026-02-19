@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """
-CLI para criar tarefas no Jira via API REST (Jira Cloud).
+CLI para gerenciar tarefas no Jira via API REST (Jira Cloud).
 Uso: variáveis JIRA_SITE, JIRA_EMAIL e JIRA_API_TOKEN no .env ou no ambiente.
+
+Comandos disponíveis:
+  create      - Criar uma nova issue/tarefa
+  get         - Buscar informações de uma issue
+  transitions - Listar transições disponíveis para uma issue
+  transition  - Executar uma transição de status em uma issue
 """
 
 import argparse
@@ -9,7 +15,6 @@ import base64
 import json
 import os
 import sys
-from datetime import date
 from pathlib import Path
 from typing import Optional
 
@@ -105,8 +110,61 @@ def create_issue(
     return r.json()
 
 
+def get_issue(issue_key: str) -> dict:
+    """Busca uma issue do Jira."""
+    url = f"https://{JIRA_SITE}/rest/api/3/issue/{issue_key}"
+    headers = {
+        "Accept": "application/json",
+        "Authorization": get_auth_header(),
+    }
+    r = requests.get(url, headers=headers, timeout=30)
+    r.raise_for_status()
+    return r.json()
+
+
+def get_transitions(issue_key: str) -> list:
+    """Obtém as transições disponíveis para uma issue."""
+    url = f"https://{JIRA_SITE}/rest/api/3/issue/{issue_key}/transitions"
+    headers = {
+        "Accept": "application/json",
+        "Authorization": get_auth_header(),
+    }
+    r = requests.get(url, headers=headers, timeout=30)
+    r.raise_for_status()
+    return r.json().get("transitions", [])
+
+
+def transition_issue(issue_key: str, transition_id: str) -> dict:
+    """Executa uma transição de status em uma issue."""
+    url = f"https://{JIRA_SITE}/rest/api/3/issue/{issue_key}/transitions"
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": get_auth_header(),
+    }
+    payload = {
+        "transition": {"id": transition_id}
+    }
+    r = requests.post(url, headers=headers, json=payload, timeout=30)
+    r.raise_for_status()
+    return r.json()
+
+
+def format_description(desc) -> str:
+    """Formata a descrição de uma issue (ADF ou texto simples)."""
+    if isinstance(desc, dict) and 'content' in desc:
+        lines = []
+        for item in desc.get('content', []):
+            if item.get('type') == 'paragraph':
+                for content in item.get('content', []):
+                    if content.get('type') == 'text':
+                        lines.append(content.get('text', ''))
+        return '\n'.join(lines)
+    return desc if desc else "(sem descrição)"
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Criar tarefas no Jira via CLI")
+    parser = argparse.ArgumentParser(description="Gerenciar tarefas no Jira via CLI")
     subparsers = parser.add_subparsers(dest="command", help="Comando")
 
     # create
@@ -119,6 +177,20 @@ def main():
     create_parser.add_argument("--assignee", "-a", default="", help="Nome do responsável (ex: Gabriel Maciel)")
     create_parser.add_argument("--start-date", default="", help="Data de início YYYY-MM-DD (padrão: hoje)")
 
+    # get
+    get_parser = subparsers.add_parser("get", help="Buscar informações de uma issue")
+    get_parser.add_argument("issue_key", help="Chave da issue (ex: EBC-1)")
+    get_parser.add_argument("--json", action="store_true", help="Exibir resultado completo em JSON")
+
+    # transitions
+    transitions_parser = subparsers.add_parser("transitions", help="Listar transições disponíveis para uma issue")
+    transitions_parser.add_argument("issue_key", help="Chave da issue (ex: EBC-1)")
+
+    # transition
+    transition_parser = subparsers.add_parser("transition", help="Executar uma transição de status em uma issue")
+    transition_parser.add_argument("issue_key", help="Chave da issue (ex: EBC-1)")
+    transition_parser.add_argument("transition_id", help="ID da transição (use 'transitions' para listar)")
+
     args = parser.parse_args()
 
     if not JIRA_SITE or not get_auth_header():
@@ -126,19 +198,19 @@ def main():
         print("Copie .env.example para .env e preencha os valores.", file=sys.stderr)
         sys.exit(1)
 
-    if args.command == "create":
-        description = args.description
-        if args.description_file:
-            p = Path(args.description_file)
-            if not p.is_absolute():
-                p = ROOT / p
-            if p.exists():
-                description = p.read_text(encoding="utf-8")
-            else:
-                print(f"Aviso: arquivo não encontrado: {args.description_file}", file=sys.stderr)
-        start_date = args.start_date.strip() or None  # só envia se informado (projeto pode não ter o campo)
-        assignee = args.assignee.strip() or None
-        try:
+    try:
+        if args.command == "create":
+            description = args.description
+            if args.description_file:
+                p = Path(args.description_file)
+                if not p.is_absolute():
+                    p = ROOT / p
+                if p.exists():
+                    description = p.read_text(encoding="utf-8")
+                else:
+                    print(f"Aviso: arquivo não encontrado: {args.description_file}", file=sys.stderr)
+            start_date = args.start_date.strip() or None  # só envia se informado (projeto pode não ter o campo)
+            assignee = args.assignee.strip() or None
             data = create_issue(
                 project_key=args.project,
                 summary=args.summary,
@@ -150,21 +222,52 @@ def main():
             key = data.get("key", "?")
             print(f"Tarefa criada: {key}")
             print(f"URL: https://{JIRA_SITE}/browse/{key}")
-        except requests.HTTPError as e:
-            body = e.response.text
-            try:
-                err = e.response.json()
-                body = json.dumps(err, indent=2, ensure_ascii=False)
-            except Exception:
-                pass
-            print(f"Erro Jira ({e.response.status_code}): {body}", file=sys.stderr)
-            sys.exit(1)
-        except requests.RequestException as e:
-            print(f"Erro de rede: {e}", file=sys.stderr)
-            sys.exit(1)
-    else:
-        parser.print_help()
-        sys.exit(0)
+
+        elif args.command == "get":
+            issue = get_issue(args.issue_key)
+            if args.json:
+                print(json.dumps(issue, indent=2, ensure_ascii=False))
+            else:
+                print(f"\n=== Issue: {args.issue_key} ===")
+                print(f"Título: {issue['fields']['summary']}")
+                print(f"Status: {issue['fields']['status']['name']}")
+                print(f"\nDescrição:")
+                desc = issue['fields'].get('description', {})
+                print(format_description(desc))
+
+        elif args.command == "transitions":
+            transitions = get_transitions(args.issue_key)
+            print(f"\n=== Transições disponíveis para {args.issue_key} ===")
+            if transitions:
+                for trans in transitions:
+                    to_status = trans.get('to', {}).get('name', 'N/A')
+                    print(f"  ID: {trans['id']} - Nome: {trans['name']} - Para: {to_status}")
+            else:
+                print("  Nenhuma transição disponível.")
+
+        elif args.command == "transition":
+            transition_issue(args.issue_key, args.transition_id)
+            print(f"Transição executada com sucesso para {args.issue_key}")
+            # Mostra o novo status
+            issue = get_issue(args.issue_key)
+            print(f"Novo status: {issue['fields']['status']['name']}")
+
+        else:
+            parser.print_help()
+            sys.exit(0)
+
+    except requests.HTTPError as e:
+        body = e.response.text
+        try:
+            err = e.response.json()
+            body = json.dumps(err, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
+        print(f"Erro Jira ({e.response.status_code}): {body}", file=sys.stderr)
+        sys.exit(1)
+    except requests.RequestException as e:
+        print(f"Erro de rede: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
